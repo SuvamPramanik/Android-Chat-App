@@ -4,14 +4,18 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.ListViewCompat;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -102,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
         String text = msg.getText().toString();
 
         if(text != null && !text.equals("")) {
-            Log.d("Suvam", "Message : " + msg.toString());
             // Read the input field and push a new instance
             // of ChatMessage to the Firebase database
             FirebaseDatabase.getInstance()
@@ -117,21 +120,38 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void displayChatMessages(){
-        final ListView messageList = (ListView) findViewById(R.id.messagesList);
+        ListView messageList = (ListView) findViewById(R.id.messagesList);
+        messageList.setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
+        messageList.setStackFromBottom(true);
 
         adapter = new FirebaseListAdapter<ChatMessage>(this, ChatMessage.class, R.layout.message_layout,
                 FirebaseDatabase.getInstance().getReference()) {
             @Override
             protected void populateView(View v, ChatMessage model, int position) {
+                //get the views
+                RelativeLayout messageLayout = (RelativeLayout) v.findViewById(R.id.message_bubble_layout);
+                RelativeLayout messageLayoutParent = (RelativeLayout) v.findViewById(R.id.message_bubble_layout_parent);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messageLayout.getLayoutParams();
+
                 TextView messageText = (TextView) v.findViewById(R.id.message_text);
                 TextView messageTime = (TextView) v.findViewById(R.id.message_time);
                 TextView messageUser = (TextView) v.findViewById(R.id.message_user);
 
-                //Log.d("Suvam", model.getMessageText());
-                //Log.d("Suvam", model.getMessageUser());
+                if (model.getMessageUser().equals(FirebaseAuth.getInstance().getCurrentUser().getDisplayName())) {
+                    messageLayout.setBackgroundResource(R.drawable.bubble2);
+                    params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                    messageLayout.setLayoutParams(params);
+                }
+                // If not my message then align to left
+                else {
+                    messageLayout.setBackgroundResource(R.drawable.bubble1);
+                    params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                    messageLayout.setLayoutParams(params);
+                }
+
                 messageText.setText(model.getMessageText());
                 messageUser.setText(model.getMessageUser());
-                messageTime.setText(DateFormat.format("dd-MM-yyyy HH:mm A", model.getMessageTime()));
+                messageTime.setText(DateFormat.format("HH:mm A", model.getMessageTime()));
 
             }
         };
